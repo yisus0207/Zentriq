@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, MapPin } from 'lucide-react';
+import { Menu, X, MapPin, Sparkles, HelpCircle, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { branding } from '@/config/branding';
 import styles from './Navbar.module.css';
@@ -33,9 +33,9 @@ export function Navbar() {
 
   const navLinks = [
     { name: 'Explorar', href: '/explorar', icon: <MapPin size={18} /> },
-    { name: 'Producto', href: '/#producto' },
-    { name: 'Cómo funciona', href: '/#como-funciona' },
-    { name: 'Precios', href: '/#precios' },
+    { name: 'Producto', href: '/#producto', icon: <Sparkles size={18} /> },
+    { name: 'Cómo funciona', href: '/#como-funciona', icon: <HelpCircle size={18} /> },
+    { name: 'Precios', href: '/#precios', icon: <CreditCard size={18} /> },
   ];
 
   return (
@@ -93,6 +93,8 @@ export function Navbar() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
           >
+            <div className={styles.mobileMenuTitle}>MENÚ DE NAVEGACIÓN</div>
+
             <div className={styles.mobileNavItems}>
               {navLinks.map((link) => (
                 <Link 

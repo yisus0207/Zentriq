@@ -32,10 +32,13 @@ export default function MapComponent({ locations }: { locations: RestaurantLocat
   const isInteracting = useRef(false);
   const router = useRouter();
 
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const [mapLoaded, setMapLoaded] = useState(false);
+ 
+  // 1. Initialize map once
   useEffect(() => {
-    if (!mapContainer.current || !mapboxgl.accessToken) return;
-
-    // Initialize map
+    if (!mapContainer.current || !mapboxgl.accessToken || map.current) return;
+ 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
@@ -44,15 +47,54 @@ export default function MapComponent({ locations }: { locations: RestaurantLocat
       pitch: 60, // 3D angle
       bearing: 0,
       attributionControl: false,
-      logoPosition: 'bottom-left' // We will hide this via CSS
+      logoPosition: 'bottom-left'
     });
+ 
+    const pauseRotation = () => { isInteracting.current = true; };
+    const resumeRotation = () => { setTimeout(() => { isInteracting.current = false; }, 2000); };
+ 
+    map.current.on('mousedown', pauseRotation);
+    map.current.on('touchstart', pauseRotation);
+    map.current.on('wheel', pauseRotation);
+    map.current.on('mouseup', resumeRotation);
+    map.current.on('touchend', resumeRotation);
+ 
+    function rotateCamera() {
+      if (!isInteracting.current && map.current) {
+        const currentBearing = map.current.getBearing();
+        map.current.setBearing(currentBearing + 0.05); // Slow cinematic rotation
+      }
+      animationRef.current = requestAnimationFrame(rotateCamera);
+    }
+ 
+    map.current.on('load', () => {
+      setMapLoaded(true);
+      map.current?.resize();
+      rotateCamera();
+    });
+ 
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+    };
+  }, []);
 
-    // Add markers
+  // 2. Update markers dynamically when locations change
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    // Clear old markers
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+
+    // Add new markers
     locations.forEach((loc) => {
-      // Create custom HTML element for marker
       const el = document.createElement('div');
       el.className = 'custom-marker';
-      
+
       if (loc.restaurants?.logo_url) {
         el.style.backgroundImage = `url(${loc.restaurants.logo_url})`;
         el.style.backgroundSize = 'cover';
@@ -60,7 +102,7 @@ export default function MapComponent({ locations }: { locations: RestaurantLocat
       } else {
         el.style.backgroundColor = '#10B981';
       }
-      
+
       el.style.width = '40px';
       el.style.height = '40px';
       el.style.borderRadius = '50%';
@@ -76,7 +118,6 @@ export default function MapComponent({ locations }: { locations: RestaurantLocat
         el.style.transform = 'scale(1)';
       });
 
-      // Create popup
       const popupHtml = `
         <div style="text-align: center; padding: 0.5rem 0; color: #1a1a1a;">
           <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; color: #1a1a1a; font-weight: bold;">
@@ -91,16 +132,19 @@ export default function MapComponent({ locations }: { locations: RestaurantLocat
         </div>
       `;
 
-      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false, className: 'dark-popup' })
-        .setHTML(popupHtml);
+      const popup = new mapboxgl.Popup({ 
+        offset: 25, 
+        closeButton: false, 
+        className: 'dark-popup'
+      }).setHTML(popupHtml);
 
-      // Add to map
-      new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([loc.longitude, loc.latitude])
         .setPopup(popup)
         .addTo(map.current!);
 
-      // Interaction listeners for this specific marker
+      markersRef.current.push(marker);
+
       el.addEventListener('click', () => {
         isInteracting.current = true;
         map.current?.flyTo({
@@ -111,37 +155,7 @@ export default function MapComponent({ locations }: { locations: RestaurantLocat
         setTimeout(() => { isInteracting.current = false; }, 3000);
       });
     });
-
-    // Handle user interaction to pause rotation
-    const pauseRotation = () => { isInteracting.current = true; };
-    const resumeRotation = () => { setTimeout(() => { isInteracting.current = false; }, 2000); };
-
-    map.current.on('mousedown', pauseRotation);
-    map.current.on('touchstart', pauseRotation);
-    map.current.on('wheel', pauseRotation);
-    
-    map.current.on('mouseup', resumeRotation);
-    map.current.on('touchend', resumeRotation);
-
-    // Animation loop for rotation
-    function rotateCamera() {
-      if (!isInteracting.current && map.current) {
-        const currentBearing = map.current.getBearing();
-        map.current.setBearing(currentBearing + 0.1); // Slow cinematic rotation
-      }
-      animationRef.current = requestAnimationFrame(rotateCamera);
-    }
-
-    // Start animation once map is loaded
-    map.current.on('load', () => {
-      rotateCamera();
-    });
-
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (map.current) map.current.remove();
-    };
-  }, [locations, router]);
+  }, [locations, mapLoaded]);
 
   if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
     return (
@@ -152,9 +166,10 @@ export default function MapComponent({ locations }: { locations: RestaurantLocat
   }
 
   return (
-    <div style={{ height: '100%', width: '100%', borderRadius: '16px', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+    <div style={{ height: '100%', width: '100%', position: 'relative', zIndex: 1 }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .mapboxgl-popup-content {
           border-radius: 12px;
           padding: 15px;

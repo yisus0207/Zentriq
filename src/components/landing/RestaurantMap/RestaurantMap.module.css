@@ -1,5 +1,5 @@
 .mapSection {
-  padding: 6rem 1.5rem;
+  padding: 1.5rem 0;
   background: var(--color-bg);
   position: relative;
   overflow: hidden;
@@ -44,14 +44,14 @@
 }
 
 .mapContainer {
-  height: 600px;
+  height: 750px;
   width: 100%;
   border-radius: 24px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(0, 0, 0, 0.05);
   overflow: hidden;
   position: relative;
-  background: #f0f0f0; /* skeleton color */
+  background: #0b0f19; /* dark fallback */
 }
 
 /* Dark mode overrides */
@@ -92,13 +92,13 @@
 
 @media (max-width: 768px) {
   .mapSection {
-    padding: 4rem 1rem;
+    padding: 1rem 0;
   }
   .title {
     font-size: 2rem;
   }
   .mapContainer {
-    height: 450px;
+    height: 550px;
     border-radius: 16px;
   }
 }

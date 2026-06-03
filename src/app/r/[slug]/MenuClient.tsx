@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Minus, Plus, ArrowRight, Megaphone } from 'lucide-react';
+import { Minus, Plus, ArrowRight, Megaphone, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/lib/demo-data';
 import type { Restaurant, MenuCategory, MenuItem } from '@/types/menu';
+import Link from 'next/link';
 import styles from './menu.module.css';
 
 interface MenuClientProps {
@@ -159,6 +160,10 @@ export function MenuClient({ restaurant, categories, items }: MenuClientProps) {
 
       {/* Cover */}
       <div className={styles.coverWrapper}>
+        <Link href="/explorar" className={styles.backButton}>
+          <ArrowLeft size={18} />
+          <span>Volver</span>
+        </Link>
         <div
           className={styles.coverImage}
           style={{
