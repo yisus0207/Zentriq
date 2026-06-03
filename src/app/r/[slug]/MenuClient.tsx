@@ -125,7 +125,7 @@ export function MenuClient({ restaurant, categories, items }: MenuClientProps) {
   return (
     <div className={styles.menuPage}>
       {/* Global Promotional Banner */}
-      {restaurant.settings?.bannerActive && restaurant.settings?.bannerText && (
+      {(restaurant.settings?.bannerActive as boolean) && (restaurant.settings?.bannerText as string) && (
         <div className={styles.globalBanner}>
           <Megaphone size={18} className={styles.bannerIcon} />
           <span>{restaurant.settings.bannerText as string}</span>
