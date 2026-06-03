@@ -23,6 +23,10 @@ export default function SettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState('');
 
+  const [coverUrl, setCoverUrl] = useState('');
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState('');
+
   // Account Profile
   const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
@@ -96,6 +100,8 @@ export default function SettingsPage() {
           setPhone(restaurant.phone || '');
           setLogoUrl(restaurant.logo_url || '');
           setLogoPreview(restaurant.logo_url || '');
+          setCoverUrl(restaurant.cover_url || '');
+          setCoverPreview(restaurant.cover_url || '');
         }
 
         // 4. Get primary location address
@@ -153,6 +159,7 @@ export default function SettingsPage() {
       const supabase = createClient();
       
       let finalLogoUrl = logoUrl;
+      let finalCoverUrl = coverUrl;
       
       // Upload new logo if selected
       if (logoFile) {
@@ -165,6 +172,17 @@ export default function SettingsPage() {
         }
       }
 
+      // Upload new cover if selected
+      if (coverFile) {
+        const uploadedUrl = await uploadImage(coverFile, 'restaurant-media', `covers/${restaurantId}`);
+        if (uploadedUrl) {
+          finalCoverUrl = uploadedUrl;
+          setCoverUrl(uploadedUrl);
+        } else {
+          alert('Error al subir la portada.');
+        }
+      }
+
       // 1. Update restaurant details
       const { error: rError } = await supabase
         .from('restaurants')
@@ -173,6 +191,7 @@ export default function SettingsPage() {
           description: description || null,
           phone: phone || null,
           logo_url: finalLogoUrl,
+          cover_url: finalCoverUrl,
         })
         .eq('id', restaurantId);
 
@@ -287,6 +306,14 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
   const menuUrl = `https://zentriq.app/r/${slug}`; // Replace with your actual domain when deployed
 
   return (
@@ -328,25 +355,52 @@ export default function SettingsPage() {
           <div className={styles.settingsCard}>
             <h2 className={styles.cardTitle}>Perfil del Restaurante</h2>
             
-            <div className={styles.formGroup} style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'center' }}>
-              <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--color-surface-elevated)', border: '1px dashed var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                {logoPreview ? (
+            <div style={{ marginBottom: 'var(--space-6)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+              {/* Cover Photo */}
+              <div style={{ position: 'relative', height: '160px', backgroundColor: 'var(--color-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {coverPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoPreview} alt="Logo preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={coverPreview} alt="Cover preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <ImageIcon size={24} color="var(--color-text-muted)" />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--color-text-muted)' }}>
+                    <ImageIcon size={32} style={{ opacity: 0.5, marginBottom: '8px' }} />
+                    <span style={{ fontSize: '12px', fontWeight: 600 }}>Foto de Portada</span>
+                  </div>
                 )}
+                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.2)', opacity: 0, transition: 'opacity 0.2s' }} 
+                     onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                     onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', pointerEvents: 'none' }}>
+                    Cambiar Portada
+                  </div>
+                </div>
                 <input 
                   type="file" 
                   accept="image/*" 
-                  onChange={handleLogoChange}
-                  style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
-                  title="Cambiar Logo"
+                  onChange={handleCoverChange}
+                  style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', zIndex: 10 }}
+                  title="Cambiar Portada"
                 />
               </div>
-              <div>
-                <label className={styles.formLabel}>Logo del Restaurante</label>
-                <p className={styles.helperText} style={{ marginTop: 0 }}>Haz clic en el círculo para subir tu logo (JPG, PNG). Recomendado: 400x400px.</p>
+
+              {/* Logo (Overlapping Cover) */}
+              <div style={{ position: 'relative', padding: '0 var(--space-4) var(--space-4)' }}>
+                <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--color-surface)', border: '4px solid var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0, marginTop: '-40px', zIndex: 20 }}>
+                  {logoPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logoPreview} alt="Logo preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <ImageIcon size={24} color="var(--color-text-muted)" />
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleLogoChange}
+                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                    title="Cambiar Logo"
+                  />
+                </div>
+                <p className={styles.helperText} style={{ marginTop: '8px' }}>Sube tu logo (cuadrado) y foto de portada (rectangular) haciendo clic en las áreas correspondientes.</p>
               </div>
             </div>
 
