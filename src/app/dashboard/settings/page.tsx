@@ -18,6 +18,8 @@ export default function SettingsPage() {
   const [slug, setSlug] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   const [currency, setCurrency] = useState('COP');
   const [logoUrl, setLogoUrl] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -104,16 +106,18 @@ export default function SettingsPage() {
           setCoverPreview(restaurant.cover_url || '');
         }
 
-        // 4. Get primary location address
+        // 4. Get primary location address and coordinates
         const { data: location } = await supabase
           .from('restaurant_locations')
-          .select('address')
+          .select('address, latitude, longitude')
           .eq('restaurant_id', member.restaurant_id)
           .eq('is_primary', true)
           .maybeSingle();
 
         if (location) {
-          setAddress(location.address);
+          setAddress(location.address || '');
+          setLatitude(location.latitude ? location.latitude.toString() : '');
+          setLongitude(location.longitude ? location.longitude.toString() : '');
         }
 
         // 5. Get settings
@@ -208,7 +212,11 @@ export default function SettingsPage() {
       if (existingLocation) {
         await supabase
           .from('restaurant_locations')
-          .update({ address: address })
+          .update({ 
+            address: address,
+            latitude: parseFloat(latitude) || 0,
+            longitude: parseFloat(longitude) || 0
+          })
           .eq('id', existingLocation.id);
       } else {
         await supabase
@@ -219,8 +227,8 @@ export default function SettingsPage() {
             address: address,
             city: 'Principal',
             country: 'Colombia',
-            latitude: 0,
-            longitude: 0,
+            latitude: parseFloat(latitude) || 0,
+            longitude: parseFloat(longitude) || 0,
             is_primary: true,
           });
       }
@@ -311,6 +319,23 @@ export default function SettingsPage() {
       const file = e.target.files[0];
       setCoverFile(file);
       setCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleCaptureLocation = () => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude.toString());
+          setLongitude(position.coords.longitude.toString());
+        },
+        (error) => {
+          alert('No se pudo obtener la ubicación. Asegúrate de darle permisos al navegador.');
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      alert('Tu navegador no soporta geolocalización.');
     }
   };
 
@@ -456,15 +481,65 @@ export default function SettingsPage() {
                 />
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Dirección física</label>
+                <label className={styles.formLabel}>Dirección de la Sede Principal</label>
                 <input
                   type="text"
                   className={styles.formInput}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Ej. Calle 10 #43-12, Medellín"
+                  placeholder="Ej. Calle 10 # 43-20, El Poblado"
                 />
               </div>
+            </div>
+
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '2rem 0 1rem', color: 'var(--color-text)' }}>Ubicación en el Mapa</h3>
+            
+            <div style={{ backgroundColor: 'var(--color-surface-elevated)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                <p className={styles.helperText} style={{ margin: 0 }}>
+                  Aparecerás en el mapa interactivo de Zentriq (Explorar). Para ubicarte, puedes usar el GPS o ingresar las coordenadas de Google Maps manualmente.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCaptureLocation}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '10px 16px', backgroundColor: 'var(--color-primary)', color: 'white',
+                    border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 600, cursor: 'pointer',
+                    width: 'fit-content'
+                  }}
+                >
+                  📍 Capturar mi ubicación actual
+                </button>
+              </div>
+
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Latitud</label>
+                  <input
+                    type="number"
+                    step="any"
+                    className={styles.formInput}
+                    value={latitude}
+                    onChange={(e) => setLatitude(e.target.value)}
+                    placeholder="Ej. 6.2442"
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Longitud</label>
+                  <input
+                    type="number"
+                    step="any"
+                    className={styles.formInput}
+                    value={longitude}
+                    onChange={(e) => setLongitude(e.target.value)}
+                    placeholder="Ej. -75.5812"
+                  />
+                </div>
+              </div>
+              <p className={styles.helperText} style={{ marginTop: '12px' }}>
+                <strong>💡 Cómo sacarlas de Google Maps:</strong> Entra a Google Maps, mantén presionado sobre tu restaurante, y verás los números en el buscador (ej: <code>6.2442, -75.5812</code>). El primero es Latitud, el segundo Longitud.
+              </p>
             </div>
 
             <div className={styles.formGroup}>

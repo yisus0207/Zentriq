@@ -7,8 +7,8 @@ import 'leaflet/dist/leaflet.css';
 import Link from 'next/link';
 import { MapPin, Navigation, ExternalLink } from 'lucide-react';
 
-// Fix Leaflet's default icon path issues with Webpack/Next.js
-const customIcon = new L.Icon({
+// Default icon fallback for restaurants without a logo
+const defaultIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
@@ -17,6 +17,31 @@ const customIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
+
+// Function to create a custom HTML icon with the restaurant's logo
+const createCustomLogoIcon = (logoUrl: string | undefined) => {
+  if (!logoUrl) return defaultIcon;
+
+  return L.divIcon({
+    className: 'custom-logo-marker',
+    html: `
+      <div style="
+        width: 40px; 
+        height: 40px; 
+        border-radius: 50%; 
+        border: 3px solid #10B981; 
+        background-color: white; 
+        background-image: url('${logoUrl}'); 
+        background-size: cover; 
+        background-position: center; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      "></div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20]
+  });
+};
 
 type RestaurantLocation = {
   id: string;
@@ -58,15 +83,15 @@ export default function MapComponent({ locations }: { locations: RestaurantLocat
         scrollWheelZoom={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         
         {locations.map((loc) => (
           <Marker 
             key={loc.id} 
             position={[loc.latitude, loc.longitude]} 
-            icon={customIcon}
+            icon={createCustomLogoIcon(loc.restaurants?.logo_url)}
           >
             <Popup className="restaurant-popup">
               <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
