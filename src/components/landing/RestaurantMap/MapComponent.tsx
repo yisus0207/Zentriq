@@ -43,11 +43,9 @@ export default function MapComponent({ locations }: { locations: RestaurantLocat
       zoom: 12,
       pitch: 60, // 3D angle
       bearing: 0,
-      attributionControl: false
+      attributionControl: false,
+      logoPosition: 'bottom-left' // We will hide this via CSS
     });
-
-    // Add navigation controls (zoom, rotate)
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     // Add markers
     locations.forEach((loc) => {
@@ -164,6 +162,10 @@ export default function MapComponent({ locations }: { locations: RestaurantLocat
         }
         .mapboxgl-popup-tip {
           border-top-color: white !important;
+        }
+        /* Hides Mapbox watermark and attribution */
+        .mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-right {
+          display: none !important;
         }
       `}} />
     </div>
