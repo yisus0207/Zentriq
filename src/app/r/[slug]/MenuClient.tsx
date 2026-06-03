@@ -31,6 +31,13 @@ export function MenuClient({ restaurant, categories, items }: MenuClientProps) {
   const tabsRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef(false);
 
+  // Customer checkout form state
+  const [showCheckoutForm, setShowCheckoutForm] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [customerNotes, setCustomerNotes] = useState('');
+
   const {
     items: cartItems,
     isOpen,
@@ -100,26 +107,44 @@ export function MenuClient({ restaurant, categories, items }: MenuClientProps) {
     return categoryEmojis[item.categoryId] || '🍽️';
   };
 
+  // Called from cart footer - opens the customer form
   const handleCheckout = () => {
     if (cartItems.length === 0) return;
-
-    let text = `*Nuevo pedido - ${restaurant.name}* %0A%0A`;
-    cartItems.forEach((ci) => {
-      const priceToUse = ci.item.discountPrice || ci.item.price;
-      text += `• ${ci.quantity}x ${ci.item.name} - ${formatPrice(priceToUse * ci.quantity, restaurant.currency)}%0A`;
-    });
-    text += `%0A*Total: ${formatPrice(cartSubtotal, restaurant.currency)}*%0A%0A`;
-    text += `¿Cuál es tu nombre y dirección para la entrega?`;
-
     const phone = restaurant.phone ? restaurant.phone.replace(/[\s+]/g, '') : '';
-    
     if (!phone) {
       alert('El restaurante no tiene un número de WhatsApp configurado.');
       return;
     }
+    closeCart();
+    setShowCheckoutForm(true);
+  };
+
+  // Called from the checkout form - builds and sends to WhatsApp
+  const handleConfirmOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    const phone = restaurant.phone ? restaurant.phone.replace(/[\s+]/g, '') : '';
+
+    let text = `*🛒 Nuevo pedido - ${restaurant.name}* %0A%0A`;
+    text += `*Pedido:*%0A`;
+    cartItems.forEach((ci) => {
+      const priceToUse = ci.item.discountPrice || ci.item.price;
+      text += `%E2%80%A2 ${ci.quantity}x ${ci.item.name} - ${formatPrice(priceToUse * ci.quantity, restaurant.currency)}%0A`;
+    });
+    text += `%0A*Total: ${formatPrice(cartSubtotal, restaurant.currency)}*%0A%0A`;
+    text += `*Datos del cliente:*%0A`;
+    text += `👤 Nombre: ${customerName}%0A`;
+    if (customerPhone) text += `📱 Teléfono: ${customerPhone}%0A`;
+    if (customerAddress) text += `📍 Dirección: ${customerAddress}%0A`;
+    if (customerNotes) text += `%0A📝 Comentarios: ${customerNotes}%0A`;
 
     const waUrl = `https://wa.me/${phone}?text=${text}`;
     window.open(waUrl, '_blank');
+    setShowCheckoutForm(false);
+    clearCart();
+    setCustomerName('');
+    setCustomerPhone('');
+    setCustomerAddress('');
+    setCustomerNotes('');
   };
 
   return (
@@ -146,7 +171,12 @@ export function MenuClient({ restaurant, categories, items }: MenuClientProps) {
       {/* Restaurant Info */}
       <div className={styles.restaurantInfo}>
         <div className={styles.restaurantLogo}>
-          {restaurant.name.charAt(0)}
+          {restaurant.logoUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={restaurant.logoUrl} alt={restaurant.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+          ) : (
+            restaurant.name.charAt(0)
+          )}
         </div>
         <h1 className={styles.restaurantName}>{restaurant.name}</h1>
         <div className={styles.restaurantMeta}>
@@ -360,6 +390,91 @@ export function MenuClient({ restaurant, categories, items }: MenuClientProps) {
                 </div>
               </>
             )}
+          </div>
+        </>
+      )}
+      {/* Checkout Form Modal */}
+      {showCheckoutForm && (
+        <>
+          <div className={styles.cartOverlay} onClick={() => setShowCheckoutForm(false)} />
+          <div className={styles.cartDrawer}>
+            <div className={styles.cartHandle} />
+
+            <div className={styles.cartHeader}>
+              <h3 className={styles.cartTitle}>📦 Datos para tu pedido</h3>
+              <button className={styles.cartClear} onClick={() => setShowCheckoutForm(false)}>Volver</button>
+            </div>
+
+            {/* Order summary */}
+            <div className={styles.checkoutSummary}>
+              {cartItems.map((ci) => (
+                <div key={ci.item.id} className={styles.summaryItem}>
+                  <span>{ci.quantity}x {ci.item.name}</span>
+                  <span>{formatPrice((ci.item.discountPrice || ci.item.price) * ci.quantity, restaurant.currency)}</span>
+                </div>
+              ))}
+              <div className={styles.summaryTotal}>
+                <span>Total</span>
+                <strong>{formatPrice(cartSubtotal, restaurant.currency)}</strong>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmOrder} className={styles.checkoutForm}>
+              <div className={styles.checkoutFields}>
+                <div className={styles.checkoutField}>
+                  <label className={styles.checkoutLabel}>Tu nombre *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. María García"
+                    className={styles.checkoutInput}
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                  />
+                </div>
+
+                <div className={styles.checkoutField}>
+                  <label className={styles.checkoutLabel}>Tu teléfono (opcional)</label>
+                  <input
+                    type="tel"
+                    placeholder="Ej. +57 300 123 4567"
+                    className={styles.checkoutInput}
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                  />
+                </div>
+
+                <div className={styles.checkoutField}>
+                  <label className={styles.checkoutLabel}>📍 Dirección de entrega (opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Calle 10 #43-12, Apto 301"
+                    className={styles.checkoutInput}
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
+                  />
+                </div>
+
+                <div className={styles.checkoutField}>
+                  <label className={styles.checkoutLabel}>📝 Comentarios o instrucciones especiales</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Ej. Sin cebolla, punto de la carne a 3/4..."
+                    className={styles.checkoutInput}
+                    value={customerNotes}
+                    onChange={(e) => setCustomerNotes(e.target.value)}
+                    style={{ resize: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.cartFooter}>
+                <button type="submit" className={styles.checkoutButton}>
+                  Enviar pedido por WhatsApp
+                  <ArrowRight size={18} />
+                </button>
+              </div>
+            </form>
           </div>
         </>
       )}

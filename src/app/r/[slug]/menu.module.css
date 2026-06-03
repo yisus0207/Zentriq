@@ -649,33 +649,4 @@
 
 @media (min-width: 480px) {
   .productGrid {
-    gap: var(--space-4);
-  }
-}
-
-@media (min-width: 768px) {
-  .productGrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  
-  .coverWrapper {
-    height: 280px;
-  }
-  
-  .cartFab {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 440px;
-  }
-  
-  .cartDrawer {
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: 480px;
-    border-radius: var(--radius-xl);
-    bottom: var(--space-4);
-    max-height: 70dvh;
-  }
-}
+    gap: var(--space-4);\n  }\n}\n\n@media (min-width: 768px) {\n  .productGrid {\n    grid-template-columns: repeat(3, 1fr);\n  }\n  \n  .coverWrapper {\n    height: 280px;\n  }\n  \n  .cartFab {\n    left: 50%;\n    right: auto;\n    transform: translateX(-50%);\n    width: 100%;\n    max-width: 440px;\n  }\n  \n  .cartDrawer {\n    left: 50%;\n    transform: translateX(-50%);\n    max-width: 480px;\n    border-radius: var(--radius-xl);\n    bottom: var(--space-4);\n    max-height: 70dvh;\n  }\n}\n\n/* --- Checkout Form (customer info before WhatsApp) --- */\n.checkoutForm {\n  display: flex;\n  flex-direction: column;\n  flex: 1;\n  overflow: hidden;\n}\n\n.checkoutFields {\n  flex: 1;\n  overflow-y: auto;\n  padding: var(--space-4);\n  display: flex;\n  flex-direction: column;\n  gap: var(--space-4);\n}\n\n.checkoutField {\n  display: flex;\n  flex-direction: column;\n  gap: var(--space-1-5);\n}\n\n.checkoutLabel {\n  font-size: var(--text-xs);\n  font-weight: 700;\n  color: var(--color-text-secondary);\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n}\n\n.checkoutInput {\n  width: 100%;\n  padding: var(--space-3) var(--space-4);\n  background: rgba(255, 255, 255, 0.05);\n  border: 1.5px solid var(--color-border);\n  border-radius: var(--radius-md);\n  color: var(--color-text);\n  font-size: var(--text-sm);\n  font-family: inherit;\n  transition: border-color 0.2s;\n}\n\n.checkoutInput:focus {\n  outline: none;\n  border-color: var(--color-primary);\n  background: rgba(255, 255, 255, 0.07);\n}\n\n.checkoutInput::placeholder {\n  color: var(--color-text-muted);\n}\n\n/* Order summary in checkout form */\n.checkoutSummary {\n  background: rgba(0, 0, 0, 0.2);\n  border-bottom: 1px solid var(--color-border);\n  padding: var(--space-3) var(--space-4);\n  display: flex;\n  flex-direction: column;\n  gap: var(--space-1-5);\n}\n\n.summaryItem {\n  display: flex;\n  justify-content: space-between;\n  font-size: var(--text-sm);\n  color: var(--color-text-secondary);\n}\n\n.summaryTotal {\n  display: flex;\n  justify-content: space-between;\n  font-size: var(--text-sm);\n  color: var(--color-text);\n  border-top: 1px solid var(--color-border);\n  padding-top: var(--space-2);\n  margin-top: var(--space-1);\n}\n\n.summaryTotal strong {\n  color: var(--color-primary);\n  font-weight: 800;\n  font-family: var(--font-display);\n}\n
