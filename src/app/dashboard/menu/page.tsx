@@ -10,8 +10,10 @@ import {
   Sparkles,
   Layers,
   UtensilsCrossed,
+  Image as ImageIcon
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { uploadImage } from '@/lib/supabase/storage';
 import { demoCategories, demoItems, formatPrice } from '@/lib/demo-data';
 import type { MenuCategory, MenuItem } from '@/types/menu';
 import styles from './menu.module.css';
@@ -36,6 +38,9 @@ export default function MenuEditorPage() {
   const [formDiscountPrice, setFormDiscountPrice] = useState('');
   const [formCategory, setFormCategory] = useState('');
   const [formFeatured, setFormFeatured] = useState(false);
+  const [formImageUrl, setFormImageUrl] = useState('');
+  const [formImageFile, setFormImageFile] = useState<File | null>(null);
+  const [formImagePreview, setFormImagePreview] = useState('');
 
   // Load Categories & Items from Supabase
   useEffect(() => {
@@ -195,6 +200,9 @@ export default function MenuEditorPage() {
     setFormDiscountPrice('');
     setFormCategory(categories[0]?.id || '');
     setFormFeatured(false);
+    setFormImageUrl('');
+    setFormImageFile(null);
+    setFormImagePreview('');
     setIsDrawerOpen(true);
   };
 
@@ -206,6 +214,9 @@ export default function MenuEditorPage() {
     setFormDiscountPrice(item.discountPrice ? item.discountPrice.toString() : '');
     setFormCategory(item.categoryId);
     setFormFeatured(item.isFeatured);
+    setFormImageUrl(item.imageUrl || '');
+    setFormImageFile(null);
+    setFormImagePreview(item.imageUrl || '');
     setIsDrawerOpen(true);
   };
 
@@ -261,6 +272,18 @@ export default function MenuEditorPage() {
 
     try {
       const supabase = createClient();
+      
+      let finalImageUrl = formImageUrl;
+      
+      if (formImageFile) {
+        const uploadedUrl = await uploadImage(formImageFile, 'restaurant-media', `menu/${restaurantId}`);
+        if (uploadedUrl) {
+          finalImageUrl = uploadedUrl;
+          setFormImageUrl(uploadedUrl);
+        } else {
+          alert('Error al subir la imagen.');
+        }
+      }
 
       if (editingItem) {
         // DB Update
@@ -273,6 +296,7 @@ export default function MenuEditorPage() {
             discount_price: parsedDiscountPrice || null,
             category_id: formCategory,
             is_featured: formFeatured,
+            image_url: finalImageUrl,
           })
           .eq('id', editingItem.id);
 
@@ -289,6 +313,7 @@ export default function MenuEditorPage() {
                   discountPrice: parsedDiscountPrice,
                   categoryId: formCategory,
                   isFeatured: formFeatured,
+                  imageUrl: finalImageUrl,
                 }
               : item
           )
@@ -306,6 +331,7 @@ export default function MenuEditorPage() {
             discount_price: parsedDiscountPrice || null,
             is_available: true,
             is_featured: formFeatured,
+            image_url: finalImageUrl,
             sort_order: items.length,
             created_by: userId,
           })
@@ -501,8 +527,13 @@ export default function MenuEditorPage() {
         <div className={styles.itemGrid}>
           {filteredItems.map((item) => (
             <div key={item.id} className={styles.itemCard}>
-              <div className={styles.itemImageWrapper}>
-                <span>{getItemEmoji(item)}</span>
+              <div className={styles.itemImageWrapper} style={{ overflow: 'hidden' }}>
+                {item.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span>{getItemEmoji(item)}</span>
+                )}
                 {item.isFeatured && (
                   <span className={styles.featuredBadge}>Popular</span>
                 )}
@@ -588,6 +619,34 @@ export default function MenuEditorPage() {
 
             <form onSubmit={handleSaveItem} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               <div className={styles.drawerBody}>
+                
+                <div className={styles.formGroup} style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'center' }}>
+                  <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-surface-elevated)', border: '1px dashed var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                    {formImagePreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={formImagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <ImageIcon size={24} color="var(--color-text-muted)" />
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setFormImageFile(file);
+                          setFormImagePreview(URL.createObjectURL(file));
+                        }
+                      }}
+                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                    />
+                  </div>
+                  <div>
+                    <label className={styles.formLabel} style={{ marginBottom: 4 }}>Foto del Producto</label>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0 }}>Opcional. Se recomienda 800x800px (JPG/PNG).</p>
+                  </div>
+                </div>
+
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>Nombre del plato</label>
                   <input

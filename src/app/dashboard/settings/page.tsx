@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Save, Check, Globe, Download, Store, User, Megaphone, QrCode } from 'lucide-react';
+import { Save, Check, Globe, Download, Store, User, Megaphone, QrCode, Image as ImageIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { uploadImage } from '@/lib/supabase/storage';
 import { QRCodeSVG } from 'qrcode.react';
 import styles from './settings.module.css';
 
@@ -18,6 +19,9 @@ export default function SettingsPage() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [currency, setCurrency] = useState('COP');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState('');
 
   // Account Profile
   const [ownerName, setOwnerName] = useState('');
@@ -90,6 +94,8 @@ export default function SettingsPage() {
           setDescription(restaurant.description || '');
           setSlug(restaurant.public_slug);
           setPhone(restaurant.phone || '');
+          setLogoUrl(restaurant.logo_url || '');
+          setLogoPreview(restaurant.logo_url || '');
         }
 
         // 4. Get primary location address
@@ -145,6 +151,19 @@ export default function SettingsPage() {
 
     try {
       const supabase = createClient();
+      
+      let finalLogoUrl = logoUrl;
+      
+      // Upload new logo if selected
+      if (logoFile) {
+        const uploadedUrl = await uploadImage(logoFile, 'restaurant-media', `logos/${restaurantId}`);
+        if (uploadedUrl) {
+          finalLogoUrl = uploadedUrl;
+          setLogoUrl(uploadedUrl);
+        } else {
+          alert('Error al subir el logo. Asegúrate de haber creado el bucket "restaurant-media" público en Supabase.');
+        }
+      }
 
       // 1. Update restaurant details
       const { error: rError } = await supabase
@@ -153,7 +172,7 @@ export default function SettingsPage() {
           name: restaurantName,
           description: description || null,
           phone: phone || null,
-          // Slug not updated to prevent changing public link after creation
+          logo_url: finalLogoUrl,
         })
         .eq('id', restaurantId);
 
@@ -260,6 +279,14 @@ export default function SettingsPage() {
     );
   }
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
   const menuUrl = `https://zentriq.app/r/${slug}`; // Replace with your actual domain when deployed
 
   return (
@@ -300,6 +327,28 @@ export default function SettingsPage() {
         {activeTab === 'restaurant' && (
           <div className={styles.settingsCard}>
             <h2 className={styles.cardTitle}>Perfil del Restaurante</h2>
+            
+            <div className={styles.formGroup} style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'center' }}>
+              <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--color-surface-elevated)', border: '1px dashed var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                {logoPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoPreview} alt="Logo preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <ImageIcon size={24} color="var(--color-text-muted)" />
+                )}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleLogoChange}
+                  style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                  title="Cambiar Logo"
+                />
+              </div>
+              <div>
+                <label className={styles.formLabel}>Logo del Restaurante</label>
+                <p className={styles.helperText} style={{ marginTop: 0 }}>Haz clic en el círculo para subir tu logo (JPG, PNG). Recomendado: 400x400px.</p>
+              </div>
+            </div>
 
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Nombre Comercial</label>
