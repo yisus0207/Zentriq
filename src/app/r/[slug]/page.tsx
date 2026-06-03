@@ -20,9 +20,11 @@ async function getRestaurantBySlug(slug: string) {
 
     // 1. Fetch restaurant details
     const { data: dbRestaurant, error: rError } = await supabase
-      .from('public_restaurants')
+      .from('restaurants')
       .select('*')
       .eq('public_slug', slug)
+      .eq('is_active', true)
+      .eq('is_public', true)
       .single();
 
     if (rError || !dbRestaurant) {
@@ -33,7 +35,7 @@ async function getRestaurantBySlug(slug: string) {
     // 2. Fetch settings (currency & timezone)
     const { data: dbSettings } = await supabase
       .from('restaurant_settings')
-      .select('currency, timezone')
+      .select('currency, timezone, banner_text, banner_active')
       .eq('restaurant_id', dbRestaurant.id)
       .single();
 
@@ -75,7 +77,11 @@ async function getRestaurantBySlug(slug: string) {
       address: dbLocation?.address || undefined,
       currency: dbSettings?.currency || 'COP',
       isActive: true,
-      settings: { timezone: dbSettings?.timezone || 'America/Bogota' },
+      settings: { 
+        timezone: dbSettings?.timezone || 'America/Bogota',
+        bannerText: dbSettings?.banner_text || undefined,
+        bannerActive: dbSettings?.banner_active || false,
+      },
     };
 
     const categories = (dbCategories || []).map((cat) => ({
@@ -95,6 +101,7 @@ async function getRestaurantBySlug(slug: string) {
       name: item.name,
       description: item.description || undefined,
       price: Number(item.price),
+      discountPrice: item.discount_price ? Number(item.discount_price) : undefined,
       imageUrl: item.image_url || undefined,
       isAvailable: item.is_available,
       isFeatured: item.is_featured,

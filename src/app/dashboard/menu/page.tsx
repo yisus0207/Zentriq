@@ -33,6 +33,7 @@ export default function MenuEditorPage() {
   const [formName, setFormName] = useState('');
   const [formDesc, setFormDesc] = useState('');
   const [formPrice, setFormPrice] = useState('');
+  const [formDiscountPrice, setFormDiscountPrice] = useState('');
   const [formCategory, setFormCategory] = useState('');
   const [formFeatured, setFormFeatured] = useState(false);
 
@@ -114,6 +115,7 @@ export default function MenuEditorPage() {
           name: item.name,
           description: item.description || undefined,
           price: Number(item.price),
+          discountPrice: item.discount_price ? Number(item.discount_price) : undefined,
           imageUrl: item.image_url || undefined,
           isAvailable: item.is_available,
           isFeatured: item.is_featured,
@@ -190,6 +192,7 @@ export default function MenuEditorPage() {
     setFormName('');
     setFormDesc('');
     setFormPrice('');
+    setFormDiscountPrice('');
     setFormCategory(categories[0]?.id || '');
     setFormFeatured(false);
     setIsDrawerOpen(true);
@@ -200,6 +203,7 @@ export default function MenuEditorPage() {
     setFormName(item.name);
     setFormDesc(item.description || '');
     setFormPrice(item.price.toString());
+    setFormDiscountPrice(item.discountPrice ? item.discountPrice.toString() : '');
     setFormCategory(item.categoryId);
     setFormFeatured(item.isFeatured);
     setIsDrawerOpen(true);
@@ -213,6 +217,8 @@ export default function MenuEditorPage() {
 
     const parsedPrice = parseFloat(formPrice);
     if (isNaN(parsedPrice)) return;
+    
+    const parsedDiscountPrice = formDiscountPrice ? parseFloat(formDiscountPrice) : undefined;
 
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !restaurantId) {
       // Mock save logic fallback
@@ -225,6 +231,7 @@ export default function MenuEditorPage() {
                   name: formName,
                   description: formDesc,
                   price: parsedPrice,
+                  discountPrice: parsedDiscountPrice,
                   categoryId: formCategory,
                   isFeatured: formFeatured,
                 }
@@ -239,6 +246,7 @@ export default function MenuEditorPage() {
           name: formName,
           description: formDesc,
           price: parsedPrice,
+          discountPrice: parsedDiscountPrice,
           imageUrl: '',
           isAvailable: true,
           isFeatured: formFeatured,
@@ -262,6 +270,7 @@ export default function MenuEditorPage() {
             name: formName,
             description: formDesc || null,
             price: parsedPrice,
+            discount_price: parsedDiscountPrice || null,
             category_id: formCategory,
             is_featured: formFeatured,
           })
@@ -277,6 +286,7 @@ export default function MenuEditorPage() {
                   name: formName,
                   description: formDesc,
                   price: parsedPrice,
+                  discountPrice: parsedDiscountPrice,
                   categoryId: formCategory,
                   isFeatured: formFeatured,
                 }
@@ -293,6 +303,7 @@ export default function MenuEditorPage() {
             name: formName,
             description: formDesc || null,
             price: parsedPrice,
+            discount_price: parsedDiscountPrice || null,
             is_available: true,
             is_featured: formFeatured,
             sort_order: items.length,
@@ -310,6 +321,7 @@ export default function MenuEditorPage() {
           name: inserted.name,
           description: inserted.description || undefined,
           price: Number(inserted.price),
+          discountPrice: inserted.discount_price ? Number(inserted.discount_price) : undefined,
           imageUrl: inserted.image_url || undefined,
           isAvailable: inserted.is_available,
           isFeatured: inserted.is_featured,
@@ -501,9 +513,25 @@ export default function MenuEditorPage() {
                 <p className={styles.itemDesc}>
                   {item.description || 'Sin descripción.'}
                 </p>
-                <span className={styles.itemPrice}>
-                  {formatPrice(item.price, 'COP')}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {item.discountPrice ? (
+                    <>
+                      <span style={{ textDecoration: 'line-through', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                        {formatPrice(item.price, 'COP')}
+                      </span>
+                      <span className={styles.itemPrice} style={{ color: '#10B981' }}>
+                        {formatPrice(item.discountPrice, 'COP')}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10B981', padding: '2px 6px', borderRadius: '4px' }}>
+                        {Math.round((1 - item.discountPrice / item.price) * 100)}% OFF
+                      </span>
+                    </>
+                  ) : (
+                    <span className={styles.itemPrice}>
+                      {formatPrice(item.price, 'COP')}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className={styles.itemFooter}>
@@ -612,6 +640,19 @@ export default function MenuEditorPage() {
                       ))}
                     </select>
                   </div>
+                </div>
+                
+                <div className={styles.formGroup} style={{ marginTop: 'var(--space-2)' }}>
+                  <label className={styles.formLabel}>Precio Promocional (Opcional)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className={styles.formInput}
+                    placeholder="Ej. 30000"
+                    value={formDiscountPrice}
+                    onChange={(e) => setFormDiscountPrice(e.target.value)}
+                  />
+                  <span className={styles.helperText}>Si ingresas un valor, este reemplazará el precio original y mostrará una etiqueta de descuento.</span>
                 </div>
 
                 <div className={styles.formGroup} style={{ marginTop: 'var(--space-2)' }}>

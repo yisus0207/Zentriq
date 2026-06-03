@@ -168,17 +168,21 @@ CREATE TABLE restaurant_business_hours (
 
 -- 2.7 RESTAURANT SETTINGS TABLE (Decoupled configuration parameters)
 CREATE TABLE restaurant_settings (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  restaurant_id UUID UNIQUE NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  restaurant_id UUID PRIMARY KEY REFERENCES restaurants(id) ON DELETE CASCADE,
   currency TEXT DEFAULT 'COP',
   timezone TEXT DEFAULT 'America/Bogota',
+  tax_rate NUMERIC(5, 2) DEFAULT 0,
+  banner_text TEXT NULL,
+  banner_active BOOLEAN DEFAULT false,
   pickup_enabled BOOLEAN DEFAULT true,
   delivery_enabled BOOLEAN DEFAULT false,
   minimum_order_value NUMERIC(10, 2) DEFAULT 0.00,
   
+  -- Audit & Soft Delete
+  updated_at TIMESTAMPTZ DEFAULT now(),
   updated_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+  deleted_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  deleted_at TIMESTAMPTZ NULL
 );
 
 -- 2.8 RESTAURANT MEDIA TABLE (Dedicated gallery asset storage)
@@ -218,6 +222,7 @@ CREATE TABLE menu_items (
   name TEXT NOT NULL,
   description TEXT,
   price NUMERIC(10, 2) NOT NULL,
+  discount_price NUMERIC(10, 2) NULL,
   image_url TEXT,
   is_available BOOLEAN DEFAULT true,
   is_featured BOOLEAN DEFAULT false,

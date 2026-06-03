@@ -72,10 +72,10 @@ export const useCart = create<CartState>()(
       },
 
       subtotal: () => {
-        return get().items.reduce(
-          (sum, ci) => sum + ci.item.price * ci.quantity,
-          0
-        );
+        return get().items.reduce((sum, ci) => {
+          const priceToUse = ci.item.discountPrice || ci.item.price;
+          return sum + priceToUse * ci.quantity;
+        }, 0);
       },
     }),
     {

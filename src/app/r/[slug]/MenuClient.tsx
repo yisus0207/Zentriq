@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Minus, Plus, ArrowRight } from 'lucide-react';
+import { Minus, Plus, ArrowRight, Megaphone } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/lib/demo-data';
 import type { Restaurant, MenuCategory, MenuItem } from '@/types/menu';
@@ -100,8 +100,38 @@ export function MenuClient({ restaurant, categories, items }: MenuClientProps) {
     return categoryEmojis[item.categoryId] || '🍽️';
   };
 
+  const handleCheckout = () => {
+    if (cartItems.length === 0) return;
+
+    let text = `*Nuevo pedido - ${restaurant.name}* %0A%0A`;
+    cartItems.forEach((ci) => {
+      const priceToUse = ci.item.discountPrice || ci.item.price;
+      text += `• ${ci.quantity}x ${ci.item.name} - ${formatPrice(priceToUse * ci.quantity, restaurant.currency)}%0A`;
+    });
+    text += `%0A*Total: ${formatPrice(cartSubtotal, restaurant.currency)}*%0A%0A`;
+    text += `¿Cuál es tu nombre y dirección para la entrega?`;
+
+    const phone = restaurant.phone ? restaurant.phone.replace(/[\s+]/g, '') : '';
+    
+    if (!phone) {
+      alert('El restaurante no tiene un número de WhatsApp configurado.');
+      return;
+    }
+
+    const waUrl = `https://wa.me/${phone}?text=${text}`;
+    window.open(waUrl, '_blank');
+  };
+
   return (
     <div className={styles.menuPage}>
+      {/* Global Promotional Banner */}
+      {restaurant.settings?.bannerActive && restaurant.settings?.bannerText && (
+        <div className={styles.globalBanner}>
+          <Megaphone size={18} className={styles.bannerIcon} />
+          <span>{restaurant.settings.bannerText as string}</span>
+        </div>
+      )}
+
       {/* Cover */}
       <div className={styles.coverWrapper}>
         <div
@@ -199,9 +229,23 @@ export function MenuClient({ restaurant, categories, items }: MenuClientProps) {
                       <p className={styles.productDesc}>{item.description}</p>
                     )}
                     <div className={styles.productBottom}>
-                      <span className={styles.productPrice}>
-                        {formatPrice(item.price, restaurant.currency)}
-                      </span>
+                      {item.discountPrice ? (
+                        <div className={styles.priceContainer}>
+                          <span className={styles.originalPrice}>
+                            {formatPrice(item.price, restaurant.currency)}
+                          </span>
+                          <span className={styles.discountPrice}>
+                            {formatPrice(item.discountPrice, restaurant.currency)}
+                          </span>
+                          <span className={styles.discountBadge}>
+                            {Math.round((1 - item.discountPrice / item.price) * 100)}% OFF
+                          </span>
+                        </div>
+                      ) : (
+                        <span className={styles.productPrice}>
+                          {formatPrice(item.price, restaurant.currency)}
+                        </span>
+                      )}
                       {item.isAvailable && (
                         <button
                           className={`${styles.addButton} ${
@@ -272,7 +316,9 @@ export function MenuClient({ restaurant, categories, items }: MenuClientProps) {
                       <div className={styles.cartItemInfo}>
                         <div className={styles.cartItemName}>{ci.item.name}</div>
                         <div className={styles.cartItemPrice}>
-                          {formatPrice(ci.item.price * ci.quantity, restaurant.currency)}
+                          {ci.item.discountPrice
+                            ? formatPrice(ci.item.discountPrice * ci.quantity, restaurant.currency)
+                            : formatPrice(ci.item.price * ci.quantity, restaurant.currency)}
                         </div>
                       </div>
                       <div className={styles.cartItemQty}>
@@ -307,8 +353,8 @@ export function MenuClient({ restaurant, categories, items }: MenuClientProps) {
                       {formatPrice(cartSubtotal, restaurant.currency)}
                     </span>
                   </div>
-                  <button className={styles.checkoutButton}>
-                    Hacer pedido
+                  <button className={styles.checkoutButton} onClick={handleCheckout}>
+                    Hacer pedido (WhatsApp)
                     <ArrowRight size={18} />
                   </button>
                 </div>

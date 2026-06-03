@@ -30,6 +30,7 @@ export interface MenuItem {
   name: string;
   description?: string;
   price: number;
+  discountPrice?: number;
   imageUrl?: string;
   isAvailable: boolean;
   isFeatured: boolean;

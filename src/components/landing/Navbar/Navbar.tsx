@@ -2,47 +2,129 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Menu, X, MapPin } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { branding } from '@/config/branding';
 import styles from './Navbar.module.css';
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 10);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Prevent scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [mobileMenuOpen]);
+
+  const navLinks = [
+    { name: 'Explorar', href: '/explorar', icon: <MapPin size={18} /> },
+    { name: 'Producto', href: '/#producto' },
+    { name: 'Cómo funciona', href: '/#como-funciona' },
+    { name: 'Precios', href: '/#precios' },
+  ];
+
   return (
-    <nav className={`${styles.nav} ${scrolled ? styles.scrolled : ''}`}>
-      <div className={styles.navInner}>
-        <Link href="/" className={styles.logo} aria-label={`${branding.name} home`}>
-          <span className={styles.logoMark}>
-            {branding.name.charAt(0)}
-          </span>
-          <span>{branding.name}</span>
-        </Link>
-
-        <div className={styles.desktopLinks}>
-          <a href="#producto" className={styles.navLink}>Producto</a>
-          <a href="#como-funciona" className={styles.navLink}>Cómo funciona</a>
-          <a href="#precios" className={styles.navLink}>Precios</a>
-        </div>
-
-        <div className={styles.navActions}>
-          <Link href="/auth/login" className={`${styles.navLink} ${styles.loginBtn}`}>
-            Iniciar sesión
+    <>
+      <header className={`${styles.header} ${scrolled ? styles.scrolled : ''}`}>
+        <div className={styles.container}>
+          <Link href="/" className={styles.logo} onClick={() => setMobileMenuOpen(false)}>
+            <div className={styles.logoMark}>
+              {branding.name.charAt(0)}
+            </div>
+            <span className={styles.logoText}>{branding.name}</span>
           </Link>
-          <Link href="/auth/register">
-            <button className={styles.ctaBtn}>
+
+          {/* Desktop Navigation */}
+          <nav className={styles.desktopNav}>
+            <ul className={styles.navItems}>
+              {navLinks.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className={styles.navLink}>
+                    {link.icon && <span className={styles.linkIcon}>{link.icon}</span>}
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className={styles.actions}>
+            <Link href="/auth/login" className={styles.loginBtn}>
+              Iniciar sesión
+            </Link>
+            <Link href="/auth/register" className={styles.ctaBtn}>
               Empezar gratis
+            </Link>
+            
+            {/* Mobile Menu Toggle */}
+            <button 
+              className={styles.menuToggle} 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+            >
+              {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
-          </Link>
+          </div>
         </div>
-      </div>
-    </nav>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div 
+            className={styles.mobileMenu}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className={styles.mobileNavItems}>
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.href} 
+                  href={link.href} 
+                  className={styles.mobileNavLink}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.icon && <span className={styles.linkIcon}>{link.icon}</span>}
+                  {link.name}
+                </Link>
+              ))}
+              <div className={styles.mobileActions}>
+                <Link 
+                  href="/auth/login" 
+                  className={styles.mobileLoginBtn}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Iniciar sesión
+                </Link>
+                <Link 
+                  href="/auth/register" 
+                  className={styles.mobileCtaBtn}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Empezar gratis
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
