@@ -1,47 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import Link from 'next/link';
-import { MapPin, Navigation, ExternalLink } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { useRouter } from 'next/navigation';
 
-// Default icon fallback for restaurants without a logo
-const defaultIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// Function to create a custom HTML icon with the restaurant's logo
-const createCustomLogoIcon = (logoUrl: string | undefined) => {
-  if (!logoUrl) return defaultIcon;
-
-  return L.divIcon({
-    className: 'custom-logo-marker',
-    html: `
-      <div style="
-        width: 40px; 
-        height: 40px; 
-        border-radius: 50%; 
-        border: 3px solid #10B981; 
-        background-color: white; 
-        background-image: url('${logoUrl}'); 
-        background-size: cover; 
-        background-position: center; 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      "></div>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-    popupAnchor: [0, -20]
-  });
-};
+// Configure the token
+if (process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+  mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+}
 
 type RestaurantLocation = {
   id: string;
@@ -58,73 +25,147 @@ type RestaurantLocation = {
   };
 };
 
-// Component to handle auto-centering if locations change
-function MapAutoCenter({ locations }: { locations: RestaurantLocation[] }) {
-  const map = useMap();
-  useEffect(() => {
-    if (locations.length > 0) {
-      const bounds = L.latLngBounds(locations.map(loc => [loc.latitude, loc.longitude]));
-      map.fitBounds(bounds, { padding: [50, 50] });
-    }
-  }, [locations, map]);
-  return null;
-}
-
 export default function MapComponent({ locations }: { locations: RestaurantLocation[] }) {
-  // Default to Medellin coordinates if no locations
-  const defaultCenter: [number, number] = [6.2442, -75.5812];
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const isInteracting = useRef(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!mapContainer.current || !mapboxgl.accessToken) return;
+
+    // Initialize map
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: [-74.7813, 10.9685], // Barranquilla
+      zoom: 12,
+      pitch: 60, // 3D angle
+      bearing: 0,
+      attributionControl: false
+    });
+
+    // Add navigation controls (zoom, rotate)
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    // Add markers
+    locations.forEach((loc) => {
+      // Create custom HTML element for marker
+      const el = document.createElement('div');
+      el.className = 'custom-marker';
+      
+      if (loc.restaurants?.logo_url) {
+        el.style.backgroundImage = `url(${loc.restaurants.logo_url})`;
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+      } else {
+        el.style.backgroundColor = '#10B981';
+      }
+      
+      el.style.width = '40px';
+      el.style.height = '40px';
+      el.style.borderRadius = '50%';
+      el.style.border = '3px solid #10B981';
+      el.style.boxShadow = '0 4px 10px rgba(0,0,0,0.5)';
+      el.style.cursor = 'pointer';
+      el.style.transition = 'transform 0.2s';
+
+      el.addEventListener('mouseenter', () => {
+        el.style.transform = 'scale(1.2)';
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transform = 'scale(1)';
+      });
+
+      // Create popup
+      const popupHtml = `
+        <div style="text-align: center; padding: 0.5rem 0; color: #1a1a1a;">
+          <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; color: #1a1a1a; font-weight: bold;">
+            ${loc.restaurants?.name}
+          </h3>
+          <p style="margin: 0 0 1rem 0; color: #666; font-size: 0.9rem;">
+            ${loc.address}
+          </p>
+          <a href="/r/${loc.restaurants?.public_slug}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #FF6B6B, #FF8E53); color: white; padding: 0.5rem 1rem; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 0.9rem;">
+            Ver menú
+          </a>
+        </div>
+      `;
+
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false, className: 'dark-popup' })
+        .setHTML(popupHtml);
+
+      // Add to map
+      new mapboxgl.Marker({ element: el })
+        .setLngLat([loc.longitude, loc.latitude])
+        .setPopup(popup)
+        .addTo(map.current!);
+
+      // Interaction listeners for this specific marker
+      el.addEventListener('click', () => {
+        isInteracting.current = true;
+        map.current?.flyTo({
+          center: [loc.longitude, loc.latitude],
+          zoom: 14,
+          essential: true
+        });
+        setTimeout(() => { isInteracting.current = false; }, 3000);
+      });
+    });
+
+    // Handle user interaction to pause rotation
+    const pauseRotation = () => { isInteracting.current = true; };
+    const resumeRotation = () => { setTimeout(() => { isInteracting.current = false; }, 2000); };
+
+    map.current.on('mousedown', pauseRotation);
+    map.current.on('touchstart', pauseRotation);
+    map.current.on('wheel', pauseRotation);
+    
+    map.current.on('mouseup', resumeRotation);
+    map.current.on('touchend', resumeRotation);
+
+    // Animation loop for rotation
+    function rotateCamera() {
+      if (!isInteracting.current && map.current) {
+        const currentBearing = map.current.getBearing();
+        map.current.setBearing(currentBearing + 0.1); // Slow cinematic rotation
+      }
+      animationRef.current = requestAnimationFrame(rotateCamera);
+    }
+
+    // Start animation once map is loaded
+    map.current.on('load', () => {
+      rotateCamera();
+    });
+
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (map.current) map.current.remove();
+    };
+  }, [locations, router]);
+
+  if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+    return (
+      <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '16px' }}>
+        <p>Token de Mapbox no configurado en .env.local</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ height: '100%', width: '100%', borderRadius: '16px', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
-      <MapContainer 
-        center={defaultCenter} 
-        zoom={13} 
-        style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={false}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
-        
-        {locations.map((loc) => (
-          <Marker 
-            key={loc.id} 
-            position={[loc.latitude, loc.longitude]} 
-            icon={createCustomLogoIcon(loc.restaurants?.logo_url)}
-          >
-            <Popup className="restaurant-popup">
-              <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: '#1a1a1a' }}>
-                  {loc.restaurants?.name}
-                </h3>
-                <p style={{ margin: '0 0 1rem 0', color: '#666', fontSize: '0.9rem' }}>
-                  {loc.address}
-                </p>
-                <Link 
-                  href={`/r/${loc.restaurants?.public_slug}`}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    background: 'linear-gradient(135deg, #FF6B6B, #FF8E53)',
-                    color: 'white',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '50px',
-                    textDecoration: 'none',
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  Ver menú <ExternalLink size={16} />
-                </Link>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-        
-        <MapAutoCenter locations={locations} />
-      </MapContainer>
+      <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+      <style dangerouslySetInnerHTML={{__html: `
+        .mapboxgl-popup-content {
+          border-radius: 12px;
+          padding: 15px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .mapboxgl-popup-tip {
+          border-top-color: white !important;
+        }
+      `}} />
     </div>
   );
 }
