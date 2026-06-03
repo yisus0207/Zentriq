@@ -1,0 +1,130 @@
+.section {
+  padding: var(--space-16) 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+/* --- Stats --- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6) var(--space-8);
+  padding: 0 var(--space-4);
+  text-align: center;
+  width: 100%;
+  max-width: 600px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.visible .stat {
+  animation: fadeIn var(--duration-slow) var(--ease-out) both;
+}
+
+.visible .stat:nth-child(1) { animation-delay: 0s; }
+.visible .stat:nth-child(2) { animation-delay: 0.1s; }
+.visible .stat:nth-child(3) { animation-delay: 0.2s; }
+.visible .stat:nth-child(4) { animation-delay: 0.3s; }
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.statLabel {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Trust text --- */
+.trustText {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  font-weight: 600;
+  opacity: 0;
+}
+
+.visible .trustText {
+  animation: fadeIn var(--duration-slow) var(--ease-out) 0.4s both;
+}
+
+/* --- Marquee --- */
+.marqueeContainer {
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 10%,
+    black 90%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 10%,
+    black 90%,
+    transparent
+  );
+}
+
+.marquee {
+  display: flex;
+  gap: var(--space-8);
+  animation: marquee 30s linear infinite;
+  width: max-content;
+}
+
+.logoItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.logoPlaceholder {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.logoName {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

@@ -1,0 +1,190 @@
+.authPage {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  position: relative;
+  overflow: hidden;
+}
+
+.authGlow {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.1), transparent 60%);
+  top: 10%;
+  right: -10%;
+  pointer-events: none;
+  filter: blur(80px);
+}
+
+.authCard {
+  width: 100%;
+  max-width: 400px;
+  animation: fadeIn var(--duration-slower) var(--ease-out) both;
+}
+
+.authLogo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  margin-bottom: var(--space-8);
+}
+
+.logoMark {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-text-inverse);
+}
+
+.logoText {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.authTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.authSubtitle {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-8);
+}
+
+.authForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgotLink {
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.forgotLink:hover {
+  color: var(--color-primary-light);
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-muted);
+  outline: none;
+}
+
+.eyeButton {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  padding: var(--space-1);
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.eyeButton:hover {
+  color: var(--color-text-secondary);
+}
+
+.submitButton {
+  width: 100%;
+  height: 52px;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--text-base);
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  transition: all var(--duration-normal) var(--ease-out);
+  margin-top: var(--space-2);
+}
+
+.submitButton:hover {
+  background: var(--color-primary-light);
+  box-shadow: var(--shadow-glow);
+}
+
+.submitButton:active {
+  transform: scale(0.98);
+}
+
+.authFooter {
+  margin-top: var(--space-8);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.authLink {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.authLink:hover {
+  color: var(--color-primary-light);
+}
