@@ -10,7 +10,7 @@ type TabId = 'restaurant' | 'account' | 'promotions' | 'qr';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabId>('restaurant');
-  
+
   // Restaurant Profile
   const [restaurantName, setRestaurantName] = useState('');
   const [description, setDescription] = useState('');
@@ -18,11 +18,11 @@ export default function SettingsPage() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [currency, setCurrency] = useState('COP');
-  
+
   // Account Profile
   const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
-  
+
   // Promotions
   const [bannerActive, setBannerActive] = useState(false);
   const [bannerText, setBannerText] = useState('');
@@ -43,7 +43,7 @@ export default function SettingsPage() {
 
       try {
         const supabase = createClient();
-        
+
         // 1. Get user session & profile
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -56,7 +56,7 @@ export default function SettingsPage() {
           .select('full_name, email')
           .eq('id', user.id)
           .single();
-          
+
         if (profile) {
           setOwnerName(profile.full_name || '');
           setOwnerEmail(profile.email || user.email || '');
@@ -196,7 +196,7 @@ export default function SettingsPage() {
           banner_text: bannerText,
           banner_active: bannerActive,
         }, { onConflict: 'restaurant_id' });
-        
+
       // 4. Update profile info
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -222,16 +222,16 @@ export default function SettingsPage() {
     if (!qrRef.current) return;
     const svg = qrRef.current.querySelector('svg');
     if (!svg) return;
-    
+
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
+
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;
-      
+
       // Draw white background
       if (ctx) {
         ctx.fillStyle = 'white';
@@ -239,14 +239,14 @@ export default function SettingsPage() {
         // Draw SVG image
         ctx.drawImage(img, 0, 0);
       }
-      
+
       const pngFile = canvas.toDataURL('image/png');
       const downloadLink = document.createElement('a');
       downloadLink.download = `QR-${slug}.png`;
       downloadLink.href = `${pngFile}`;
       downloadLink.click();
     };
-    
+
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
@@ -270,25 +270,25 @@ export default function SettingsPage() {
       </div>
 
       <div className={styles.tabsContainer}>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeTab === 'restaurant' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('restaurant')}
         >
           <Store size={18} /> Restaurante
         </button>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeTab === 'account' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('account')}
         >
           <User size={18} /> Mi Cuenta
         </button>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeTab === 'promotions' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('promotions')}
         >
           <Megaphone size={18} /> Promociones
         </button>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeTab === 'qr' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('qr')}
         >
@@ -300,7 +300,7 @@ export default function SettingsPage() {
         {activeTab === 'restaurant' && (
           <div className={styles.settingsCard}>
             <h2 className={styles.cardTitle}>Perfil del Restaurante</h2>
-            
+
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Nombre Comercial</label>
               <input
@@ -384,7 +384,7 @@ export default function SettingsPage() {
         {activeTab === 'account' && (
           <div className={styles.settingsCard}>
             <h2 className={styles.cardTitle}>Mi Cuenta</h2>
-            
+
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Nombre del Administrador</label>
               <input
@@ -395,7 +395,7 @@ export default function SettingsPage() {
                 placeholder="Ej. Juan Pérez"
               />
             </div>
-            
+
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Correo Electrónico (No Modificable)</label>
               <input
@@ -415,19 +415,19 @@ export default function SettingsPage() {
             <p className={styles.helperText} style={{ marginBottom: '1.5rem' }}>
               Muestra un anuncio llamativo en la parte superior de tu menú digital. Útil para anunciar descuentos generales, envíos gratis, u horarios festivos.
             </p>
-            
+
             <div className={styles.toggleGroup}>
               <label className={styles.toggleLabel}>Activar Banner Global</label>
               <label className={styles.switch}>
-                <input 
-                  type="checkbox" 
-                  checked={bannerActive} 
-                  onChange={(e) => setBannerActive(e.target.checked)} 
+                <input
+                  type="checkbox"
+                  checked={bannerActive}
+                  onChange={(e) => setBannerActive(e.target.checked)}
                 />
                 <span className={styles.slider}></span>
               </label>
             </div>
-            
+
             <div className={styles.formGroup} style={{ opacity: bannerActive ? 1 : 0.5, pointerEvents: bannerActive ? 'auto' : 'none', transition: 'all 0.3s' }}>
               <label className={styles.formLabel}>Texto del Banner</label>
               <input
@@ -449,11 +449,11 @@ export default function SettingsPage() {
             <p className={styles.helperText} style={{ marginBottom: '2rem' }}>
               Descarga e imprime este código QR. Tus clientes podrán escanearlo con la cámara de sus celulares para ver tu menú en tiempo real y hacerte pedidos a WhatsApp.
             </p>
-            
+
             <div className={styles.qrContainer}>
               <div className={styles.qrVisual} ref={qrRef}>
-                <QRCodeSVG 
-                  value={menuUrl} 
+                <QRCodeSVG
+                  value={menuUrl}
                   size={200}
                   bgColor={"#ffffff"}
                   fgColor={"#000000"}
@@ -469,13 +469,13 @@ export default function SettingsPage() {
                   }}
                 />
               </div>
-              
+
               <div className={styles.qrActions}>
                 <div className={styles.qrUrlBox}>
                   <Globe size={16} className={styles.qrIcon} />
                   <span>{menuUrl}</span>
                 </div>
-                
+
                 <button type="button" onClick={downloadQR} className={styles.downloadButton}>
                   <Download size={18} /> Descargar QR en alta calidad
                 </button>
